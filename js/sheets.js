@@ -15,8 +15,20 @@ function parseCSV(text) {
 async function fetchTabNames() {
   const csv = await fetchCSV(CONFIG.ABA_LISTA);
   const rows = parseCSV(csv);
+
+  // Validação: se a primeira linha parece ser o cabeçalho "Itens" de uma aba de cliente,
+  // significa que o Google retornou a aba errada (fallback silencioso)
+  const firstRowJoined = (rows[0] || []).join('|').toLowerCase();
+  if (firstRowJoined.includes('itens') || firstRowJoined.includes('discrimina')) {
+    throw new Error(`A aba "${CONFIG.ABA_LISTA}" não foi encontrada — o Google retornou outra aba no lugar. Verifique se o nome da aba na planilha é exatamente "${CONFIG.ABA_LISTA}" (sem espaços extras).`);
+  }
+
   // Pula cabeçalho, retorna primeira coluna de cada linha
-  return rows.slice(1).map(r => (r[0] || '').trim()).filter(Boolean);
+  const names = rows.slice(1).map(r => (r[0] || '').trim()).filter(Boolean);
+  if (!names.length) {
+    throw new Error(`A aba "${CONFIG.ABA_LISTA}" foi encontrada mas está vazia ou sem dados na coluna A.`);
+  }
+  return names;
 }
 
 // Busca e parseia usuários da aba _usuarios
