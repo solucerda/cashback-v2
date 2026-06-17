@@ -69,7 +69,7 @@ async function init() {
       ranked.push({ name: tab, ...stats });
     }
 
-    ranked.sort((a, b) => b.totalComm - a.totalComm);
+    ranked.sort((a, b) => b.totalCashback - a.totalCashback);
     render(ranked);
   } catch(e) {
     showError('content', e.message);
@@ -82,7 +82,7 @@ function render(ranked) {
     return;
   }
 
-  const max  = ranked[0].totalComm;
+  const max  = ranked[0].totalCashback;
   const top3 = ranked.slice(0, 3);
   const rest = ranked.slice(3);
   const medals = ['🥇', '🥈', '🥉'];
@@ -95,8 +95,8 @@ function render(ranked) {
         return `<div class="podium-card p${pos + 1}">
           <div class="podium-medal">${medals[pos]}</div>
           <div class="podium-name">${c.name}</div>
-          <div class="podium-value ${pos === 0 ? 'gold' : ''}">${fmt(c.totalComm)}</div>
-          <div class="podium-label">em comissões</div>
+          <div class="podium-value ${pos === 0 ? 'gold' : ''}">${fmt(c.totalCashback)}</div>
+          <div class="podium-label">em cashback</div>
         </div>`;
       }).join('')}
     </div>` : '';
@@ -109,8 +109,8 @@ function render(ranked) {
           <div class="rank-av">${initials(c.name)}</div>
           <div class="rank-name">${c.name}</div>
           <div class="rank-bar-wrap">
-            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(c.totalComm / max * 100).toFixed(1)}%"></div></div>
-            <div class="rank-bar-val">${fmt(c.totalComm)}</div>
+            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(c.totalCashback / max * 100).toFixed(1)}%"></div></div>
+            <div class="rank-bar-val">${fmt(c.totalCashback)}</div>
           </div>
         </div>`).join('')}
     </div>` : '';
