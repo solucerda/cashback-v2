@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashback — Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.admin-tabs { display: flex; border-bottom: 1px solid var(--gray-200); margin-bottom: 24px; }
+.admin-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--gray-500); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.admin-tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
+.admin-panel { display: none; }
+.admin-panel.active { display: block; }
+
+.clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.client-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 12px; }
+.client-av { width: 44px; height: 44px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
+.client-name { font-size: 13px; font-weight: 500; color: var(--gray-800); }
+.client-val { font-size: 13px; font-weight: 600; color: var(--green-dark); }
+.client-sub { font-size: 11px; color: var(--gray-400); }
+
+.info-box { background: var(--amber-light); border: 1px solid #fcd34d; border-radius: var(--radius); padding: 14px 18px; font-size: 13px; color: #92400e; margin-bottom: 20px; line-height: 1.8; }
+.info-box strong { display: block; font-weight: 600; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html"><div class="brand-dot"></div>Cashback</a>
+  <div class="topbar-right" id="topbar-right"></div>
+</div>
+
+<div class="page" style="max-width:900px">
+  <h2 style="font-size:20px;font-weight:600;margin-bottom:4px">Painel Admin</h2>
+  <p style="color:var(--gray-500);font-size:13px;margin-bottom:20px">Visão geral de todos os clientes</p>
+
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('clients')">Clientes</button>
+    <button class="admin-tab" onclick="switchTab('users')">Usuários</button>
+  </div>
+
+  <div id="panel-clients" class="admin-panel active">
+    <div class="loading"><div class="spinner"></div>Carregando clientes...</div>
+  </div>
+
+  <div id="panel-users" class="admin-panel">
+    <div class="loading"><div class="spinner"></div>Carregando usuários...</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const user = requireAdmin();
+if (user) init();
+
+function switchTab(name) {
+  document.querySelectorAll('.admin-tab').forEach((t, i) => t.classList.toggle('active', ['clients', 'users'][i] === name));
+  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+async function init() {
+  document.getElementById('topbar-right').innerHTML = `
+    <div class="user-chip">
+      <div class="av">${initials(user.usuario)}</div>
+      ${user.usuario}
+    </div>
+    <button class="btn sm secondary" onclick="logout()">Sair</button>`;
+
+  loadClients();
+  loadUsers();
+}
+
+async function loadClients() {
+  try {
+    const tabs   = await fetchTabNames();
+    const ranked = [];
+    for (const tab of tabs) {
+      const prods = await fetchProducts(tab);
+      ranked.push({ name: tab, ...calcStats(prods) });
+    }
+    ranked.sort((a, b) => b.totalComm - a.totalComm);
+    renderClients(ranked);
+  } catch(e) {
+    document.getElementById('panel-clients').innerHTML = `<div class="error-box"><p>Erro</p><small>${e.message}</small></div>`;
+  }
+}
+
+async function loadUsers() {
+  try {
+    const users = await fetchUsers();
+    renderUsers(users);
+  } catch(e) {
+    document.getElementById('panel-users').innerHTML = `<div class="error-box"><p>Erro</p><small>${e.message}</small></div>`;
+  }
+}
+
+function renderClients(ranked) {
+  document.getElementById('panel-clients').innerHTML = `
+    <div class="clients-grid">
+      ${ranked.map(c => `
+        <div class="client-card">
+          <div class="client-av">${initials(c.name)}</div>
+          <div>
+            <div class="client-name">${c.name}</div>
+            <div class="client-val">${fmt(c.totalComm)}</div>
+            <div class="client-sub">${c.count} produtos · ${fmt(c.totalSales)} em vendas</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderUsers(users) {
+  document.getElementById('panel-users').innerHTML = `
+    <div class="info-box">
+      <strong>Como gerenciar usuários</strong>
+      Edite diretamente a aba <code>_usuarios</code> no Google Sheets com as colunas:
+      <code>usuario · senha · aba · admin</code>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Usuário</th><th>Aba vinculada</th><th>Admin</th></tr>
+        </thead>
+        <tbody>
+          ${users.length ? users.map(u => `
+            <tr>
+              <td>${u.usuario}</td>
+              <td>${u.aba || '<span style="color:var(--gray-400)">—</span>'}</td>
+              <td><span class="badge ${u.admin ? 'sim' : 'nao'}">${u.admin ? 'Sim' : 'Não'}</span></td>
+            </tr>`).join('') :
+            '<tr><td colspan="3" style="text-align:center;color:var(--gray-400);padding:20px">Nenhum usuário cadastrado</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function logout() {
+  clearSession();
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>

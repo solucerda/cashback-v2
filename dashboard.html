@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashback — Meu Painel</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html"><div class="brand-dot"></div>Cashback</a>
+  <div class="topbar-right" id="topbar-right"></div>
+</div>
+
+<div class="page" id="content">
+  <div class="loading"><div class="spinner"></div>Carregando seus dados...</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/sheets.js"></script>
+<script src="js/auth.js"></script>
+<script>
+const user = requireLogin();
+if (user) init();
+
+function init() {
+  // Topbar
+  document.getElementById('topbar-right').innerHTML = `
+    <div class="user-chip">
+      <div class="av">${initials(user.usuario)}</div>
+      ${user.usuario}
+    </div>
+    <button class="btn sm secondary" onclick="logout()">Sair</button>`;
+
+  loadData();
+}
+
+async function loadData() {
+  try {
+    const prods = await fetchProducts(user.aba);
+    render(user.aba, prods);
+  } catch(e) {
+    showError('content', e.message);
+  }
+}
+
+function logout() {
+  clearSession();
+  window.location.href = 'index.html';
+}
+
+function render(name, prods) {
+  const s    = calcStats(prods);
+  const top  = [...prods].sort((a, b) => b.comm - a.comm).slice(0, 6);
+  const maxC = top[0]?.comm || 1;
+
+  document.getElementById('content').innerHTML = `
+    <div style="margin-bottom:24px">
+      <h2 style="font-size:22px;font-weight:600">${name}</h2>
+      <p style="color:var(--gray-400);font-size:13px;margin-top:2px">${prods.length} produto${prods.length !== 1 ? 's' : ''} registrado${prods.length !== 1 ? 's' : ''}</p>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">Total em vendas</div>
+        <div class="metric-value">${fmt(s.totalSales)}</div>
+        <div class="metric-sub">${prods.length} itens</div>
+      </div>
+      <div class="metric-card hl">
+        <div class="metric-label">Comissão gerada</div>
+        <div class="metric-value">${fmt(s.totalComm)}</div>
+        <div class="metric-sub">sobre suas compras</div>
+      </div>
+      <div class="metric-card hl">
+        <div class="metric-label">Já indenizado</div>
+        <div class="metric-value">${fmt(s.totalInden)}</div>
+        <div class="metric-sub">${pct(s.totalInden, s.totalComm)} do total</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Pagamentos confirmados</div>
+        <div class="metric-value">${s.totalPago} / ${prods.length}</div>
+        <div class="metric-sub">${pct(s.totalPago, prods.length)}</div>
+      </div>
+    </div>
+
+    <div class="section-title">Produtos</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Produto</th>
+            <th class="r">Venda</th>
+            <th class="r">Comissão</th>
+            <th class="r">Pago</th>
+            <th class="r">Indenizado</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${prods.map(p => `
+            <tr>
+              <td class="muted">${p.num}</td>
+              <td><div class="product-name" title="${p.desc}">${p.desc}</div></td>
+              <td class="r">${fmt(p.sales)}</td>
+              <td class="r green">${fmt(p.comm)}</td>
+              <td class="r"><span class="badge ${p.pago ? 'sim' : 'nao'}">${p.pago ? 'Sim' : 'Não'}</span></td>
+              <td class="r"><span class="badge ${p.inden ? 'sim' : 'nao'}">${p.inden ? 'Sim' : 'Não'}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Maiores comissões</div>
+    <div class="bars-wrap">
+      ${top.map(p => `
+        <div class="bar-row">
+          <div class="bar-name" title="${p.desc}">${p.desc.split(' ').slice(0, 4).join(' ')}</div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(p.comm / maxC * 100).toFixed(1)}%"></div></div>
+          <div class="bar-val">${fmt(p.comm)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+</script>
+</body>
+</html>

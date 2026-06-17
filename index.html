@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cashback — Ranking</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+.ranking-hero { text-align: center; margin-bottom: 36px; padding-top: 8px; }
+.ranking-hero h1 { font-size: 28px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+.ranking-hero p { color: var(--gray-500); font-size: 15px; }
+
+.podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 28px; align-items: end; }
+.podium-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px 12px; text-align: center; }
+.podium-card.p1 { border-color: #f59e0b; background: var(--amber-light); }
+.podium-medal { font-size: 28px; margin-bottom: 8px; }
+.podium-name { font-size: 13px; font-weight: 600; color: var(--gray-800); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium-value { font-size: 20px; font-weight: 700; color: var(--green-dark); }
+.podium-value.gold { color: #b45309; }
+.podium-label { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+
+.rank-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; }
+.rank-row { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
+.rank-pos { width: 24px; font-size: 13px; font-weight: 600; color: var(--gray-400); text-align: center; flex-shrink: 0; }
+.rank-av { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+.rank-name { flex: 1; font-weight: 500; font-size: 14px; }
+.rank-bar-wrap { width: 130px; flex-shrink: 0; }
+.rank-bar-track { height: 6px; background: var(--gray-100); border-radius: 99px; overflow: hidden; margin-bottom: 3px; }
+.rank-bar-fill { height: 100%; border-radius: 99px; background: var(--green); }
+.rank-bar-val { font-size: 12px; font-weight: 600; color: var(--green-dark); text-align: right; }
+
+.cta-box { background: var(--green-light); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 28px; text-align: center; margin-bottom: 32px; }
+.cta-box h3 { font-size: 18px; font-weight: 600; color: var(--green-dark); margin-bottom: 6px; }
+.cta-box p { color: var(--green-dark); font-size: 13px; margin-bottom: 20px; opacity: .85; }
+
+@media (max-width: 640px) {
+  .podium { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="index.html"><div class="brand-dot"></div>Cashback</a>
+  <div class="topbar-right">
+    <a class="btn sm" href="login.html">Entrar</a>
+  </div>
+</div>
+
+<div class="page" style="max-width:700px">
+  <div id="content">
+    <div class="loading"><div class="spinner"></div>Carregando ranking...</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/sheets.js"></script>
+<script>
+async function init() {
+  try {
+    const tabs   = await fetchTabNames();
+    const ranked = [];
+
+    for (const tab of tabs) {
+      const prods = await fetchProducts(tab);
+      const stats = calcStats(prods);
+      ranked.push({ name: tab, ...stats });
+    }
+
+    ranked.sort((a, b) => b.totalComm - a.totalComm);
+    render(ranked);
+  } catch(e) {
+    showError('content', e.message);
+  }
+}
+
+function render(ranked) {
+  if (!ranked.length) {
+    document.getElementById('content').innerHTML = '<div class="loading">Nenhum dado encontrado.</div>';
+    return;
+  }
+
+  const max  = ranked[0].totalComm;
+  const top3 = ranked.slice(0, 3);
+  const rest = ranked.slice(3);
+  const medals = ['🥇', '🥈', '🥉'];
+  const podiumOrder = top3.length >= 3 ? [top3[1], top3[0], top3[2]] : top3;
+
+  const podiumHTML = top3.length >= 2 ? `
+    <div class="podium">
+      ${podiumOrder.map(c => {
+        const pos = top3.indexOf(c);
+        return `<div class="podium-card p${pos + 1}">
+          <div class="podium-medal">${medals[pos]}</div>
+          <div class="podium-name">${c.name}</div>
+          <div class="podium-value ${pos === 0 ? 'gold' : ''}">${fmt(c.totalComm)}</div>
+          <div class="podium-label">em comissões</div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  const restHTML = rest.length ? `
+    <div class="rank-list">
+      ${rest.map((c, i) => `
+        <div class="rank-row">
+          <div class="rank-pos">${i + 4}</div>
+          <div class="rank-av">${initials(c.name)}</div>
+          <div class="rank-name">${c.name}</div>
+          <div class="rank-bar-wrap">
+            <div class="rank-bar-track"><div class="rank-bar-fill" style="width:${(c.totalComm / max * 100).toFixed(1)}%"></div></div>
+            <div class="rank-bar-val">${fmt(c.totalComm)}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : '';
+
+  document.getElementById('content').innerHTML = `
+    <div class="ranking-hero">
+      <h1>Quem mais economizou</h1>
+      <p>Acompanhe os clientes que mais acumularam cashback</p>
+    </div>
+    ${podiumHTML}
+    ${restHTML}
+    <div class="cta-box">
+      <h3>Você também pode economizar assim</h3>
+      <p>Entre em contato e comece a acompanhar seu cashback agora</p>
+      <a class="btn" href="login.html">Já sou cliente — Entrar</a>
+    </div>`;
+}
+
+init();
+</script>
+</body>
+</html>
