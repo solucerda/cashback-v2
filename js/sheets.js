@@ -24,12 +24,13 @@ async function fetchUsers() {
   const csv = await fetchCSV(CONFIG.ABA_USUARIOS);
   const rows = parseCSV(csv);
   if (rows.length < 2) return [];
-  const h = rows[0].map(c => c.toLowerCase().trim());
-  const iU  = h.findIndex(c => c.includes('usuario') || c.includes('usuário'));
+  const clean = s => (s || '').replace(/^\uFEFF/, '').replace(/['"]/g, '').toLowerCase().trim();
+  const h = rows[0].map(clean);
+  const iU  = h.findIndex(c => c.includes('usuario'));
   const iP  = h.findIndex(c => c.includes('senha'));
   const iA  = h.findIndex(c => c.includes('aba'));
   const iAd = h.findIndex(c => c.includes('admin'));
-  if (iU === -1 || iP === -1) throw new Error('Aba _usuarios sem colunas "usuario" e "senha".');
+  if (iU === -1 || iP === -1) throw new Error('Aba _usuarios sem colunas "usuario" e "senha". Cabeçalho encontrado: ' + h.join(', '));
   return rows.slice(1).map(r => ({
     usuario: (r[iU] || '').trim().toLowerCase(),
     senha:   (r[iP] || '').trim(),
@@ -59,14 +60,27 @@ async function fetchProducts(sheetName) {
   const iP = ci('pago');
   const iI = ci('indeniza');
 
+  // Converte "R$ 1.234,56" ou "1234,56" ou "R$ 1234.56" em número
+  const toNumber = (val) => {
+    if (!val) return 0;
+    let s = String(val).trim();
+    s = s.replace(/R\$\s?/gi, '').replace('%', '').trim();
+    // remove separador de milhar (ponto) só se houver vírgula decimal depois
+    if (s.includes(',')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  };
+
   return rows.slice(hi + 1).map(row => {
     const num = parseInt(row[0]);
     if (isNaN(num)) return null;
     return {
       num,
       desc:  (row[iD] || '').trim(),
-      sales: parseFloat((row[iS] || '0').replace(',', '.')) || 0,
-      comm:  parseFloat((row[iC] || '0').replace(',', '.')) || 0,
+      sales: toNumber(row[iS]),
+      comm:  toNumber(row[iC]),
       pago:  (row[iP] || '').toLowerCase().includes('sim'),
       inden: iI >= 0 ? (row[iI] || '').toLowerCase().includes('sim') : false,
     };
