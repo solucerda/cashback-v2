@@ -101,9 +101,11 @@ async function fetchProducts(sheetName) {
 
 // Calcula estatísticas de uma lista de produtos
 function calcStats(prods) {
+  const totalComm = prods.reduce((s, p) => s + p.comm, 0);
   return {
     totalSales: prods.reduce((s, p) => s + p.sales, 0),
-    totalComm:  prods.reduce((s, p) => s + p.comm, 0),
+    totalComm:  totalComm,
+    totalCashback: totalComm / 2,
     totalInden: prods.filter(p => p.inden).reduce((s, p) => s + p.comm, 0),
     totalPago:  prods.filter(p => p.pago).length,
     count:      prods.length,
