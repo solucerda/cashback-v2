@@ -99,14 +99,61 @@ async function fetchProducts(sheetName) {
   }).filter(Boolean);
 }
 
-// Calcula estatísticas de uma lista de produtos
-function calcStats(prods) {
+// Busca histórico de pagamentos (bloco J:N) de uma aba de cliente
+async function fetchPayments(sheetName) {
+  const csv = await fetchCSV(sheetName);
+  const rows = parseCSV(csv);
+
+  // Encontra linha de cabeçalho dos produtos (mesma referência usada em fetchProducts)
+  let hi = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i].join('|').toLowerCase();
+    if (r.includes('discrimina') || r.includes('n.º') || r.includes('n°')) { hi = i; break; }
+  }
+  if (hi === -1) return [];
+
+  // Colunas J,K,L,M,N = índices 9,10,11,12,13 (0-indexed)
+  const COL_DATA = 9, COL_VALOR = 10, COL_INTERVALO = 11, COL_INDEN = 12, COL_COMPROVANTE = 13;
+
+  const toNumber = (val) => {
+    if (!val) return 0;
+    let s = String(val).trim().replace(/R\$\s?/gi, '').replace('%', '').trim();
+    if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  };
+
+  const payments = [];
+  for (let i = hi + 1; i < rows.length; i++) {
+    const row = rows[i];
+    const data = (row[COL_DATA] || '').trim();
+    const valorRaw = (row[COL_VALOR] || '').trim();
+    const intervalo = (row[COL_INTERVALO] || '').trim();
+    const indenRaw = (row[COL_INDEN] || '').trim();
+    const comprovante = (row[COL_COMPROVANTE] || '').trim();
+
+    // Linha vazia no bloco J:N — pula
+    if (!data && !valorRaw && !intervalo && !indenRaw && !comprovante) continue;
+
+    payments.push({
+      data,
+      valor: toNumber(valorRaw),
+      intervalo,
+      indenizado: indenRaw.toLowerCase().includes('sim'),
+      comprovante,
+      isLink: /^https?:\/\//i.test(comprovante),
+    });
+  }
+  return payments;
+}
+function calcStats(prods, payments = []) {
   const totalComm = prods.reduce((s, p) => s + p.comm, 0);
+  const totalInden = payments.filter(p => p.indenizado).reduce((s, p) => s + p.valor, 0);
   return {
     totalSales: prods.reduce((s, p) => s + p.sales, 0),
     totalComm:  totalComm,
     totalCashback: totalComm / 2,
-    totalInden: prods.filter(p => p.inden).reduce((s, p) => s + p.comm, 0),
+    totalInden: totalInden,
     totalPago:  prods.filter(p => p.pago).length,
     count:      prods.length,
   };
