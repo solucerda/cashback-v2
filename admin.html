@@ -80,8 +80,11 @@ async function loadClients() {
     const tabs   = await fetchTabNames();
     const ranked = [];
     for (const tab of tabs) {
-      const prods = await fetchProducts(tab);
-      ranked.push({ name: tab, ...calcStats(prods) });
+      const [prods, payments] = await Promise.all([
+        fetchProducts(tab),
+        fetchPayments(tab),
+      ]);
+      ranked.push({ name: tab, ...calcStats(prods, payments) });
     }
     ranked.sort((a, b) => b.totalCashback - a.totalCashback);
     renderClients(ranked);
