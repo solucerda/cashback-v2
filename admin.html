@@ -83,7 +83,7 @@ async function loadClients() {
       const prods = await fetchProducts(tab);
       ranked.push({ name: tab, ...calcStats(prods) });
     }
-    ranked.sort((a, b) => b.totalComm - a.totalComm);
+    ranked.sort((a, b) => b.totalCashback - a.totalCashback);
     renderClients(ranked);
   } catch(e) {
     document.getElementById('panel-clients').innerHTML = `<div class="error-box"><p>Erro</p><small>${e.message}</small></div>`;
@@ -107,8 +107,8 @@ function renderClients(ranked) {
           <div class="client-av">${initials(c.name)}</div>
           <div>
             <div class="client-name">${c.name}</div>
-            <div class="client-val">${fmt(c.totalComm)}</div>
-            <div class="client-sub">${c.count} produtos · ${fmt(c.totalSales)} em vendas</div>
+            <div class="client-val">${fmt(c.totalCashback)} <span style="font-weight:400;color:var(--gray-400)">cashback</span></div>
+            <div class="client-sub">${fmt(c.totalComm)} comissão · ${c.count} produtos · ${fmt(c.totalSales)} em vendas</div>
           </div>
         </div>`).join('')}
     </div>`;
