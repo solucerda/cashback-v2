@@ -6,35 +6,59 @@
 <title>Cashback — Ranking</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-.ranking-hero { text-align: center; margin-bottom: 36px; padding-top: 8px; }
-.ranking-hero h1 { font-size: 28px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
-.ranking-hero p { color: var(--gray-500); font-size: 15px; }
+.ranking-hero { text-align: center; margin-bottom: 28px; padding-top: 4px; }
+.ranking-hero h1 { font-size: 22px; font-weight: 700; color: var(--gray-900); margin-bottom: 6px; }
+.ranking-hero p { color: var(--gray-500); font-size: 14px; }
 
-.podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 28px; align-items: end; }
-.podium-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 20px 12px; text-align: center; }
-.podium-card.p1 { border-color: #f59e0b; background: var(--amber-light); }
-.podium-medal { font-size: 28px; margin-bottom: 8px; }
-.podium-name { font-size: 13px; font-weight: 600; color: var(--gray-800); margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.podium-value { font-size: 20px; font-weight: 700; color: var(--green-dark); }
+/* Mobile: pódio empilhado em destaque visual, não grid de 3 colunas */
+.podium { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+.podium-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px; text-align: left; display: flex; align-items: center; gap: 14px; }
+.podium-card.p1 { border-color: #f59e0b; background: var(--amber-light); order: -1; }
+.podium-medal { font-size: 28px; flex-shrink: 0; }
+.podium-info { flex: 1; min-width: 0; }
+.podium-name { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.podium-value { font-size: 18px; font-weight: 700; color: var(--green-dark); }
 .podium-value.gold { color: #b45309; }
-.podium-label { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+.podium-label { font-size: 11px; color: var(--gray-400); }
 
-.rank-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 32px; }
-.rank-row { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 12px 16px; display: flex; align-items: center; gap: 14px; }
-.rank-pos { width: 24px; font-size: 13px; font-weight: 600; color: var(--gray-400); text-align: center; flex-shrink: 0; }
-.rank-av { width: 36px; height: 36px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
-.rank-name { flex: 1; font-weight: 500; font-size: 14px; }
-.rank-bar-wrap { width: 130px; flex-shrink: 0; }
-.rank-bar-track { height: 6px; background: var(--gray-100); border-radius: 99px; overflow: hidden; margin-bottom: 3px; }
+.rank-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+.rank-row { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-sm); padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+.rank-pos { width: 20px; font-size: 12px; font-weight: 600; color: var(--gray-400); text-align: center; flex-shrink: 0; }
+.rank-av { width: 32px; height: 32px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.rank-name { flex: 1; font-weight: 500; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-bar-wrap { width: 90px; flex-shrink: 0; }
+.rank-bar-track { height: 5px; background: var(--gray-100); border-radius: 99px; overflow: hidden; margin-bottom: 3px; }
 .rank-bar-fill { height: 100%; border-radius: 99px; background: var(--green); }
-.rank-bar-val { font-size: 12px; font-weight: 600; color: var(--green-dark); text-align: right; }
+.rank-bar-val { font-size: 11px; font-weight: 600; color: var(--green-dark); text-align: right; }
 
-.cta-box { background: var(--green-light); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 28px; text-align: center; margin-bottom: 32px; }
-.cta-box h3 { font-size: 18px; font-weight: 600; color: var(--green-dark); margin-bottom: 6px; }
-.cta-box p { color: var(--green-dark); font-size: 13px; margin-bottom: 20px; opacity: .85; }
+.cta-box { background: var(--green-light); border: 1px solid var(--green-mid); border-radius: var(--radius); padding: 22px 18px; text-align: center; margin-bottom: 24px; }
+.cta-box h3 { font-size: 16px; font-weight: 600; color: var(--green-dark); margin-bottom: 6px; }
+.cta-box p { color: var(--green-dark); font-size: 13px; margin-bottom: 18px; opacity: .85; }
+.cta-box .btn { width: 100%; max-width: 280px; }
 
-@media (max-width: 640px) {
-  .podium { grid-template-columns: 1fr; }
+/* Desktop: pódio volta a ser grid de 3 colunas */
+@media (min-width: 640px) {
+  .ranking-hero { margin-bottom: 36px; padding-top: 8px; }
+  .ranking-hero h1 { font-size: 28px; }
+  .ranking-hero p { font-size: 15px; }
+
+  .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+  .podium-card { flex-direction: column; text-align: center; padding: 20px 12px; }
+  .podium-card.p1 { order: 0; }
+  .podium-info { width: 100%; }
+  .podium-medal { margin-bottom: 8px; }
+  .podium-name { margin-bottom: 6px; }
+  .podium-value { font-size: 20px; }
+
+  .rank-row { padding: 12px 16px; gap: 14px; }
+  .rank-pos { width: 24px; font-size: 13px; }
+  .rank-av { width: 36px; height: 36px; font-size: 12px; }
+  .rank-name { font-size: 14px; }
+  .rank-bar-wrap { width: 130px; }
+
+  .cta-box { padding: 28px; }
+  .cta-box h3 { font-size: 18px; }
+  .cta-box .btn { width: auto; }
 }
 </style>
 </head>
@@ -94,9 +118,11 @@ function render(ranked) {
         const pos = top3.indexOf(c);
         return `<div class="podium-card p${pos + 1}">
           <div class="podium-medal">${medals[pos]}</div>
-          <div class="podium-name">${c.name}</div>
-          <div class="podium-value ${pos === 0 ? 'gold' : ''}">${fmt(c.totalCashback)}</div>
-          <div class="podium-label">em cashback</div>
+          <div class="podium-info">
+            <div class="podium-name">${c.name}</div>
+            <div class="podium-value ${pos === 0 ? 'gold' : ''}">${fmt(c.totalCashback)}</div>
+            <div class="podium-label">em cashback</div>
+          </div>
         </div>`;
       }).join('')}
     </div>` : '';
