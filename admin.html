@@ -6,21 +6,27 @@
 <title>Cashback — Admin</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-.admin-tabs { display: flex; border-bottom: 1px solid var(--gray-200); margin-bottom: 24px; }
-.admin-tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--gray-500); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.admin-tabs { display: flex; border-bottom: 1px solid var(--gray-200); margin-bottom: 20px; overflow-x: auto; }
+.admin-tab { padding: 12px 18px; font-size: 14px; font-weight: 500; color: var(--gray-500); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
 .admin-tab.active { color: var(--green-dark); border-bottom-color: var(--green); }
 .admin-panel { display: none; }
 .admin-panel.active { display: block; }
 
-.clients-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.client-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 16px; display: flex; align-items: center; gap: 12px; }
-.client-av { width: 44px; height: 44px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; }
-.client-name { font-size: 13px; font-weight: 500; color: var(--gray-800); }
-.client-val { font-size: 13px; font-weight: 600; color: var(--green-dark); }
-.client-sub { font-size: 11px; color: var(--gray-400); }
+.clients-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.client-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+.client-av { width: 40px; height: 40px; border-radius: 50%; background: var(--green-light); color: var(--green-dark); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.client-name { font-size: 14px; font-weight: 500; color: var(--gray-800); }
+.client-val { font-size: 13px; font-weight: 600; color: var(--green-dark); margin-top: 2px; }
+.client-sub { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
 
-.info-box { background: var(--amber-light); border: 1px solid #fcd34d; border-radius: var(--radius); padding: 14px 18px; font-size: 13px; color: #92400e; margin-bottom: 20px; line-height: 1.8; }
+.info-box { background: var(--amber-light); border: 1px solid #fcd34d; border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: #92400e; margin-bottom: 18px; line-height: 1.8; }
 .info-box strong { display: block; font-weight: 600; margin-bottom: 2px; }
+
+@media (min-width: 640px) {
+  .clients-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .client-av { width: 44px; height: 44px; font-size: 14px; }
+  .client-name { font-size: 13px; }
+}
 </style>
 </head>
 <body>
@@ -67,7 +73,7 @@ async function init() {
   document.getElementById('topbar-right').innerHTML = `
     <div class="user-chip">
       <div class="av">${initials(user.usuario)}</div>
-      ${user.usuario}
+      <span class="uname">${user.usuario}</span>
     </div>
     <button class="btn sm secondary" onclick="logout()">Sair</button>`;
 
@@ -124,22 +130,39 @@ function renderUsers(users) {
       Edite diretamente a aba <code>_usuarios</code> no Google Sheets com as colunas:
       <code>usuario · senha · aba · admin</code>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Usuário</th><th>Aba vinculada</th><th>Admin</th></tr>
-        </thead>
-        <tbody>
-          ${users.length ? users.map(u => `
-            <tr>
-              <td>${u.usuario}</td>
-              <td>${u.aba || '<span style="color:var(--gray-400)">—</span>'}</td>
-              <td><span class="badge ${u.admin ? 'sim' : 'nao'}">${u.admin ? 'Sim' : 'Não'}</span></td>
-            </tr>`).join('') :
-            '<tr><td colspan="3" style="text-align:center;color:var(--gray-400);padding:20px">Nenhum usuário cadastrado</td></tr>'}
-        </tbody>
-      </table>
-    </div>`;
+
+    ${users.length ? `
+      <!-- Mobile: cards -->
+      <div class="data-list">
+        ${users.map(u => `
+          <div class="data-card">
+            <div class="data-card-top">
+              <div>
+                <div class="data-card-title">${u.usuario}</div>
+                <div class="data-card-num">${u.aba || 'Sem aba vinculada'}</div>
+              </div>
+              <span class="badge ${u.admin ? 'sim' : 'nao'}">${u.admin ? 'Admin' : 'Cliente'}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <!-- Desktop: tabela -->
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Usuário</th><th>Aba vinculada</th><th>Admin</th></tr>
+          </thead>
+          <tbody>
+            ${users.map(u => `
+              <tr>
+                <td>${u.usuario}</td>
+                <td>${u.aba || '<span style="color:var(--gray-400)">—</span>'}</td>
+                <td><span class="badge ${u.admin ? 'sim' : 'nao'}">${u.admin ? 'Sim' : 'Não'}</span></td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    ` : '<div class="empty-state">Nenhum usuário cadastrado</div>'}`;
 }
 
 function logout() {
