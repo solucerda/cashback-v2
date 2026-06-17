@@ -75,6 +75,11 @@ function render(name, prods) {
         <div class="metric-sub">sobre suas compras</div>
       </div>
       <div class="metric-card hl">
+        <div class="metric-label">Cashback (50%)</div>
+        <div class="metric-value">${fmt(s.totalCashback)}</div>
+        <div class="metric-sub">metade da comissão</div>
+      </div>
+      <div class="metric-card hl">
         <div class="metric-label">Já indenizado</div>
         <div class="metric-value">${fmt(s.totalInden)}</div>
         <div class="metric-sub">${pct(s.totalInden, s.totalComm)} do total</div>
