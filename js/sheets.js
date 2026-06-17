@@ -1,6 +1,6 @@
 // Busca o CSV de uma aba pelo nome
 async function fetchCSV(sheetName) {
-  const url = `https://docs.google.com/spreadsheets/d/e/${CONFIG.PUB_ID}/pub?output=csv&sheet=${encodeURIComponent(sheetName)}`;
+  const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Não foi possível carregar a aba "${sheetName}". Status: ${res.status}`);
   return await res.text();
