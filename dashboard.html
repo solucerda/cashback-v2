@@ -40,8 +40,11 @@ function init() {
 
 async function loadData() {
   try {
-    const prods = await fetchProducts(user.aba);
-    render(user.aba, prods);
+    const [prods, payments] = await Promise.all([
+      fetchProducts(user.aba),
+      fetchPayments(user.aba),
+    ]);
+    render(user.aba, prods, payments);
   } catch(e) {
     showError('content', e.message);
   }
@@ -52,8 +55,8 @@ function logout() {
   window.location.href = 'index.html';
 }
 
-function render(name, prods) {
-  const s    = calcStats(prods);
+function render(name, prods, payments) {
+  const s    = calcStats(prods, payments);
   const top  = [...prods].sort((a, b) => b.comm - a.comm).slice(0, 6);
   const maxC = top[0]?.comm || 1;
 
@@ -82,7 +85,7 @@ function render(name, prods) {
       <div class="metric-card hl">
         <div class="metric-label">Já indenizado</div>
         <div class="metric-value">${fmt(s.totalInden)}</div>
-        <div class="metric-sub">${pct(s.totalInden, s.totalComm)} do total</div>
+        <div class="metric-sub">${pct(s.totalInden, s.totalCashback)} do cashback</div>
       </div>
       <div class="metric-card">
         <div class="metric-label">Pagamentos confirmados</div>
@@ -101,7 +104,6 @@ function render(name, prods) {
             <th class="r">Venda</th>
             <th class="r">Comissão</th>
             <th class="r">Pago</th>
-            <th class="r">Indenizado</th>
           </tr>
         </thead>
         <tbody>
@@ -112,8 +114,37 @@ function render(name, prods) {
               <td class="r">${fmt(p.sales)}</td>
               <td class="r green">${fmt(p.comm)}</td>
               <td class="r"><span class="badge ${p.pago ? 'sim' : 'nao'}">${p.pago ? 'Sim' : 'Não'}</span></td>
-              <td class="r"><span class="badge ${p.inden ? 'sim' : 'nao'}">${p.inden ? 'Sim' : 'Não'}</span></td>
             </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title">Histórico de pagamentos</div>
+    <div class="table-wrap" style="margin-bottom:28px">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Intervalo</th>
+            <th class="r">Valor</th>
+            <th class="r">Status</th>
+            <th class="r">Comprovante</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${payments.length ? payments.map(p => `
+            <tr>
+              <td>${p.data || '<span class="muted">—</span>'}</td>
+              <td>${p.intervalo || '<span class="muted">—</span>'}</td>
+              <td class="r green">${fmt(p.valor)}</td>
+              <td class="r"><span class="badge ${p.indenizado ? 'sim' : 'nao'}">${p.indenizado ? 'Pago' : 'Pendente'}</span></td>
+              <td class="r">
+                ${p.isLink
+                  ? `<a href="${p.comprovante}" target="_blank" rel="noopener" class="btn sm secondary">Ver comprovante</a>`
+                  : (p.comprovante ? `<span class="muted">${p.comprovante}</span>` : '<span class="muted">—</span>')}
+              </td>
+            </tr>`).join('') :
+            '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:20px">Nenhum pagamento registrado ainda</td></tr>'}
         </tbody>
       </table>
     </div>
